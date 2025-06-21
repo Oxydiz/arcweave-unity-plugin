@@ -1,0 +1,6 @@
+{
+  "name": "com.arcweave.unity-plugin",
+  "version": "2.1.5",
+  "displayName":  "Arcweave plugin",
+  "description": "The Arcweave Unity plugin"
+}
