@@ -1,7 +1,9 @@
 {
     "name": "com.arcweave.unity-plugin",
     "rootNamespace": "",
-    "references": [],
+    "references": [
+        "GUID:be36a139abca4aa4586df53cf7cd02c0"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
