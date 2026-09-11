@@ -1,3 +1,6 @@
+using System;
+using System.Globalization;
+using Arcweave.Interpreter.INodes;
 using UnityEngine;
 
 namespace Arcweave.Project
@@ -8,11 +11,18 @@ namespace Arcweave.Project
     {
         [field: SerializeField]
         public string Name { get; set; }
+        [field: SerializeField]
+        public string Id { get; set; }
         public object Value { get; set; }
+
+        [field: SerializeReference]
+        public IHasVariables Parent { get; set; }
 
         [SerializeField, HideInInspector]
         private string valueSerialized;
 
+        [SerializeField, HideInInspector]
+        private string parentIdSerialized;
         public object ObjectValue => Value;
 
         [SerializeField]
@@ -33,11 +43,28 @@ namespace Arcweave.Project
 
         public System.Type Type => System.Type.GetType(_typeName);
 
-        public Variable(string name, object value) {
+        /// <summary>
+        /// Initializes a variable with an explicit Arcweave variable id.
+        /// </summary>
+        public Variable(string id, string name, object value) {
+            if (value == null)
+            {
+                throw new ArgumentNullException(nameof(value), "Variable value cannot be null.");
+            }
+            this.Id = id;
             this.Name = name;
             this.Value = value;
             this.DefaultValue = value;
             this._typeName = value.GetType().FullName;
+        }
+
+        /// <summary>
+        /// Initializes a variable with an explicit Arcweave variable id and owning scope.
+        /// </summary>
+        public Variable(string id, string name, object value, IHasVariables parent)
+            : this(id, name, value)
+        {
+            Parent = parent;
         }
 
         ///<summary>Reset the variable to its default value.</summary>
@@ -61,11 +88,11 @@ namespace Arcweave.Project
             }
             if (type == typeof(int))
             {
-                return "i" + value;
+                return "i" + ((int)value).ToString(CultureInfo.InvariantCulture);
             }
             if (type == typeof(double))
             {
-                return "d" + value;
+                return "d" + ((double)value).ToString("R", CultureInfo.InvariantCulture);
             }
             if (type == typeof(bool))
             {
@@ -77,7 +104,7 @@ namespace Arcweave.Project
 
         private object DeserializeValue(string stringValue)
         {
-            if (stringValue.Length == 0)
+            if (string.IsNullOrEmpty(stringValue))
             {
                 return default;
             }
@@ -86,10 +113,10 @@ namespace Arcweave.Project
             return type switch
             {
                 'n' => null,
-                's' => valueSerialized[1..],
-                'i' => int.Parse(valueSerialized[1..]),
-                'd' => double.Parse(valueSerialized[1..]),
-                'b' => bool.Parse(valueSerialized[1..]),
+                's' => stringValue[1..],
+                'i' => int.Parse(stringValue[1..], CultureInfo.InvariantCulture),
+                'd' => double.Parse(stringValue[1..], CultureInfo.InvariantCulture),
+                'b' => bool.Parse(stringValue[1..]),
                 _ => default
             };
         }

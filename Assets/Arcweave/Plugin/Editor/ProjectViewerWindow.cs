@@ -39,7 +39,11 @@ namespace Arcweave
         private readonly Color NODE_DEFAULT_COLOR = COLOR_THEMES["default"];
 
         private ArcweaveProjectAsset _asset;
+#if UNITY_6000_5_OR_NEWER
+        private EntityId _assetID;
+#else
         private int _assetID;
+#endif
         private Rect _canvasRect;
         private Vector2 _translation;
         private float _zoomFactor = 1f;
@@ -55,14 +59,22 @@ namespace Arcweave
             get
             {
                 if ( _asset == null ) {
+#if UNITY_6000_5_OR_NEWER
+                    _asset = EditorUtility.EntityIdToObject(_assetID) as ArcweaveProjectAsset;
+#else
                     _asset = EditorUtility.InstanceIDToObject(_assetID) as ArcweaveProjectAsset;
+#endif
                 }
                 return _asset;
             }
             set
             {
                 _asset = value;
+#if UNITY_6000_5_OR_NEWER
+                _assetID = value != null ? value.GetEntityId() : default;
+#else
                 _assetID = value != null ? value.GetInstanceID() : 0;
+#endif
             }
         }
 
@@ -88,9 +100,13 @@ namespace Arcweave
         public static void Open(ArcweaveProjectAsset asset) {
             var window = GetWindow<ProjectViewerWindow>();
             window._asset = asset;
+#if UNITY_6000_5_OR_NEWER
+            window._assetID = asset.GetEntityId();
+#else
             window._assetID = asset.GetInstanceID();
+#endif
             window._currentBoardIndex = 0;
-            window.PanTo(asset.Project.boards[0].Nodes[0].Pos - new Vector2(100, 100));
+            window.PanTo(asset.Project.Boards[0].Nodes[0].Pos - new Vector2(100, 100));
         }
 
         ///----------------------------------------------------------------------------------------------
@@ -126,7 +142,7 @@ namespace Arcweave
                 return;
             }
 
-            _currentBoardIndex = Mathf.Clamp(_currentBoardIndex, 0, project.boards.Count - 1);
+            _currentBoardIndex = Mathf.Clamp(_currentBoardIndex, 0, project.Boards.Count - 1);
             _canvasRect = Rect.MinMaxRect(SIDE_MARGIN, TOP_MARGIN, position.width - SIDE_MARGIN, position.height - BOTTOM_MARGIN);
 
             GUI.color = new Color(0.13f, 0.13f, 0.13f);
@@ -180,18 +196,18 @@ namespace Arcweave
             GUILayout.BeginHorizontal(EditorStyles.toolbar);
             GUILayout.Space(SIDE_MARGIN);
             GUILayout.Label(project.name + " ");
-            if ( GUILayout.Button(project.boards[_currentBoardIndex].Name, EditorStyles.toolbarDropDown, GUILayout.Width(200)) ) {
+            if ( GUILayout.Button(project.Boards[_currentBoardIndex].Name, EditorStyles.toolbarDropDown, GUILayout.Width(200)) ) {
                 var menu = new GenericMenu();
-                for ( var i = 0; i < project.boards.Count; i++ ) {
+                for ( var i = 0; i < project.Boards.Count; i++ ) {
                     var _i = i;
-                    var boardName = project.boards[_i].Name;
+                    var boardName = project.Boards[_i].Name;
                     menu.AddItem(new GUIContent(boardName), _i == _currentBoardIndex, () => _currentBoardIndex = _i);
                 }
                 menu.ShowAsContext();
             }
             GUILayout.FlexibleSpace();
             if ( GUILayout.Button("Re-Import", EditorStyles.toolbarButton) ) {
-                asset.ImportProject(null);
+                asset.ImportProject();
             }
             GUILayout.Space(SIDE_MARGIN);
             GUILayout.EndHorizontal();
@@ -202,7 +218,7 @@ namespace Arcweave
 
             System.Action delayDraw = null;
 
-            foreach ( var node in project.boards[_currentBoardIndex].Nodes ) {
+            foreach ( var node in project.Boards[_currentBoardIndex].Nodes ) {
 
                 if ( node is Element ) {
 
@@ -327,7 +343,7 @@ namespace Arcweave
 
             ///----------------------------------------------------------------------------------------------
 
-            foreach ( var note in project.boards[_currentBoardIndex].Notes ) {
+            foreach ( var note in project.Boards[_currentBoardIndex].Notes ) {
                 var content = Interpreter.Utils.CleanString(note.RawContent);
                 var rect = new Rect(note.Pos.x, note.Pos.y, 220, _contentStyle.CalcHeight(new GUIContent(content), 220));
                 rect.yMax = Mathf.CeilToInt(rect.yMax / GRID_SIZE) * GRID_SIZE;
@@ -342,7 +358,7 @@ namespace Arcweave
 
             ///----------------------------------------------------------------------------------------------
 
-            foreach ( var node in project.boards[_currentBoardIndex].Nodes ) {
+            foreach ( var node in project.Boards[_currentBoardIndex].Nodes ) {
 
                 if ( node is Element ) {
 

@@ -10,7 +10,7 @@ namespace Arcweave.Project
         [Serializable]
         internal struct VariableState
         {
-            public string name;
+            public string id;
             public string value;
             public string type;
         };
@@ -19,19 +19,29 @@ namespace Arcweave.Project
 
         public State() {}
 
-        public State(List<Variable> variables)
+        public State(IEnumerable<Variable> variables)
         {
             SetState(variables);
         }
         
-        public void SetState(List<Variable> vars)
+        public void SetState(IEnumerable<Variable> vars)
         {
-            variables = new VariableState[vars.Count];
+            var variableList = new List<Variable>(vars);
+            variables = new VariableState[variableList.Count];
             int i = 0;
-            foreach (var variable in vars)
+            foreach (var variable in variableList)
             {
-                variables[i].name = variable.Name;
-                variables[i].value = variable.Value.ToString();
+                variables[i].id = variable.Id;
+                try
+                {
+                    variables[i].value = variable.Value is IFormattable formattable
+                        ? formattable.ToString(null, System.Globalization.CultureInfo.InvariantCulture)
+                        : variable.Value.ToString();
+                }
+                catch (Exception e)
+                {
+                    Debug.Log("Error serializing variable " + variable.Name + ": " + e.Message);
+                }
                 variables[i].type = variable.Type.FullName;
                 i++;
             }
